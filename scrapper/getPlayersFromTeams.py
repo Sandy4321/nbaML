@@ -1,12 +1,21 @@
+import argparse
+
 import requests
 import json
 import pandas as pd
 
-seasons = {'2010-11','2011-12','2012-13','2013-14','2014-15'}
-teamIds = {'chicago bulls':'1610612741'}
+# Arguments Parser
+parser = argparse.ArgumentParser(description="Process general team requests")
+parser.add_argument("-f","--filename",type=str,help="write output to FILE",required=True)
+parser.add_argument("-s", "--seasons",type=str,help="list of seasons",required=True)
+parser.add_argument("-tIds","--teamIds",type=str,help="Team Ids file",required=True)
+
+args = vars(parser.parse_args())
+filename=args['filename']
+seasons=args['seasons'].split(",")
+teamIds=args['teamIds']
 
 columns=['TeamID','PLAYER','PLAYER_ID','POSITION','HEIGHT','WEIGHT','AGE','EXP'] 
-players_details = {'Team':None,'TeamID':None,'PLAYER':None,'PLAYER_ID':None,'POSITION':None,'HEIGHT':None,'WEIGHT':None,'AGE':None,'EXP':None}
 
 def find_players_from_team(team,team_id,season):  
     url = 'http://stats.nba.com/stats/commonteamroster?'+ \
@@ -23,26 +32,15 @@ def find_players_from_team(team,team_id,season):
     df = pd.DataFrame(player_data,columns=headers)
     df = df[columns]
 
-    print df
+    return df
 
-
- 	# players_details['Team']=team
-
-	# for header in players_details:
-
-    # avg_def = df['CLOSE_DEF_DIST'].mean(axis=1)
-    # avg_dribbles = df['DRIBBLES'].mean(axis=1)
-    # avg_shot_distance = df['SHOT_DIST'].mean(axis=1)
-    # avg_touch_time = df['TOUCH_TIME'].mean(axis=1)
-
-    # #add Averages to dictionary then to list
-    # player_stats['name'] = name
-    # player_stats['avg_defender_distance']=avg_def
-    # player_stats['avg_shot_distance'] = avg_shot_distance
-    # player_stats['avg_touch_time'] = avg_touch_time
-    # player_stats['avg_dribbles'] = avg_dribbles
-    # players.append(player_stats.copy())
+teamIdsDF = pd.read_csv(teamIds)
 
 for season in seasons:
-	for name in teamIds:
-		find_players_from_team(name,teamIds[name],season)
+    l_filename = filename + \
+    "_"+season+ \
+    "_" + ".csv"
+    playersInfo = pd.DataFrame(columns=columns)    
+    for index,row in teamIdsDF.iterrows():
+    	playersInfo = playersInfo.append(find_players_from_team(str(row['TEAM_NAME']),str(row['TEAM_ID']),season),ignore_index=True)
+    playersInfo.to_csv(l_filename)
